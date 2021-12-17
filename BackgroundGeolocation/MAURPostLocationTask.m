@@ -150,9 +150,12 @@ static MAURLocationTransform s_locationTransform = nil;
     {
         // Add fields
         NSMutableData *body = [NSMutableData data];
-        for (NSString *key in locations{
-            NSString *value = locations[key];
-            [body appendData:[[NSString stringWithFormat:@"%@=%@", key, value] dataUsingEncoding:NSUTF8StringEncoding]];
+        NSDictionary *location = locations[0];
+        
+        for(NSString *key in location)
+        {
+            NSString *value = location[key];
+            [body appendData:[[NSString stringWithFormat:@"%@=%@&", key, value] dataUsingEncoding:NSUTF8StringEncoding]];
         }
         
         if ([body length] > 0) {
@@ -188,7 +191,7 @@ static MAURLocationTransform s_locationTransform = nil;
     }
 
     if (statusCode == 401)
-    {   
+    {
         dispatch_async(dispatch_get_main_queue(), ^{
             if (_delegate && [_delegate respondsToSelector:@selector(postLocationTaskHttpAuthorizationUpdates:)])
             {
