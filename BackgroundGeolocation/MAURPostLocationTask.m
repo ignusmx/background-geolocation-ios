@@ -125,13 +125,47 @@ static MAURLocationTransform s_locationTransform = nil;
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:url]];
     [request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
     [request setHTTPMethod:@"POST"];
+
+    BOOL isFormEncoded = NO;
+
     if (httpHeaders != nil) {
         for(id key in httpHeaders) {
             id value = [httpHeaders objectForKey:key];
-            [request addValue:value forHTTPHeaderField:key];
+            if([key isEqualToString:@"Content-Type"])
+            {
+                [request setValue:value forHTTPHeaderField:key];
+                if([value isEqualToString:@"application/x-www-form-urlencoded"])
+                {
+                    isFormEncoded = YES;
+                }
+            }
+            else
+            {
+                [request addValue:value forHTTPHeaderField:key];
+            }
         }
     }
-    [request setHTTPBody:[jsonStr dataUsingEncoding:NSUTF8StringEncoding]];
+
+    if(isFormEncoded)
+    {
+        // Add fields
+        NSMutableData *body = [NSMutableData data];
+        for (NSString *key in locations{
+            NSString *value = locations[key];
+            [body appendData:[[NSString stringWithFormat:@"%@=%@", key, value] dataUsingEncoding:NSUTF8StringEncoding]];
+        }
+        
+        if ([body length] > 0) {
+            [request setHTTPBody:body];
+            // set the content-length
+            NSString *postLength = [NSString stringWithFormat:@"%ld", [body length]];
+            [request setValue:postLength forHTTPHeaderField:@"Content-Length"];
+        }
+    }
+    else
+    {
+        [request setHTTPBody:[jsonStr dataUsingEncoding:NSUTF8StringEncoding]];
+    }
     
     // Create url connection and fire request
     NSHTTPURLResponse* urlResponse = nil;
